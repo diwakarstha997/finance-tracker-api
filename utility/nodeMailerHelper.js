@@ -1,11 +1,3 @@
-import nodemailer from "nodemailer";
+import { sendMail } from "../config/mailConfig";
 
-// configure transporter
-const transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-})
+// functions to send email
