@@ -9,3 +9,8 @@ const sessionModel = mongoose.model("session", sessionSchema);
 export const createSession = (sessionObj) => {
     return sessionModel(sessionObj).save();
 }
+
+// delete user session: filter - used to find session
+export const deleteSession = (filter) => {
+    return sessionModel.findOneAndDelete(filter);
+}

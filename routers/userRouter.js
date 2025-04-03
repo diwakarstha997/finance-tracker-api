@@ -1,8 +1,8 @@
 import express from "express";
-import { createUser } from "../model/userModel.js";
+import { createUser, updateUser } from "../model/userModel.js";
 import { hashPassword } from "../utility/bcryptHelper.js";
 import { v4 as uuidv4 } from "uuid";
-import { createSession } from "../model/sessionModel.js";
+import { createSession, deleteSession } from "../model/sessionModel.js";
 import { sendEmailVerification } from "../utility/nodeMailerHelper.js";
 
 const userRouter = express.Router();
@@ -53,6 +53,48 @@ userRouter.post("/", async(req,res) =>{
             status: "error",
             message: "User Creation Failed!!!"
         })
+    }
+})
+
+// Verify user email endpoint 
+userRouter.patch("/", async (req, res) => {
+    try {
+        // Fetch userEmail and token from req body
+        const { userEmail, token } = req.body;
+
+        // Check if session with email and token exists
+        const session = await deleteSession({ userEmail, token });
+
+        // if session with email and token exists proceed else return error response
+        if(!session?._id){
+            res.json({
+                status: "error",
+                message: "Invalid Verification Link!"
+            })
+            return;
+        }
+
+        // if valid link find and update the user
+        const user = await updateUser({ email: session.userEmail }, { isEmailVerified: true })
+
+        // send response back to user
+        user?._id
+            ? res.json({
+                status: "success",
+                message: "User verified successfully"
+            })
+            : res.json({
+                status: "error",
+                message: "Invalid Verification Link!!"
+            });
+
+
+        
+    } catch (error) {
+        res.json({
+            status: "error",
+            message: "Invalid Verification Link!!!"
+        });
     }
 })
 
