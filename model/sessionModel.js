@@ -14,3 +14,8 @@ export const createSession = (sessionObj) => {
 export const deleteSession = (filter) => {
     return sessionModel.findOneAndDelete(filter);
 }
+
+// Get Seesion: filter used to find specific data
+export const getSession = (filter) => {
+    return sessionModel.findOne(filter);
+}

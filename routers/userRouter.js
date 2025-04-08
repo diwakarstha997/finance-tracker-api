@@ -2,9 +2,9 @@ import express from "express";
 import { createUser, findUserByEmail, updateUser } from "../model/userModel.js";
 import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
 import { v4 as uuidv4 } from "uuid";
-import { createSession, deleteSession } from "../model/sessionModel.js";
+import { createSession, deleteSession, getSession } from "../model/sessionModel.js";
 import { sendEmailVerification } from "../utility/nodeMailerHelper.js";
-import { generateJWT } from "../utility/jwtHelper.js";
+import { generateJWT, verifyAccessJWT } from "../utility/jwtHelper.js";
 
 const userRouter = express.Router();
 
@@ -165,3 +165,61 @@ userRouter.patch("/", async (req, res) => {
 })
 
 export default userRouter;
+
+// GET User Endpoint | GET
+userRouter.get("/", async (req, res) => {
+    try {
+        // Verify jwt access token
+        const { authorization } = req.headers;
+
+        const decodedAccessJWT = verifyAccessJWT(authorization);
+
+        // if invalid error response
+        if(!decodedAccessJWT?.email){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            });
+          }
+
+        // if valid check session
+        const session = await getSession({
+            userEmail: decodedAccessJWT.email,
+            token: authorization
+        })
+
+        // if token does not exist error response
+        if(!session?._id){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            });
+          }
+
+        // if valid get user
+        const user = await findUserByEmail(decodedAccessJWT.email);
+
+        console.log(user)
+
+        // get user if user send user data in response
+        if(user?._id && user?.isEmailVerified){
+            user.password = undefined
+            res.json({
+                status: "sucess",
+                data: user
+            })
+        }
+
+        // if user doesnot exist
+        res.json({
+            status: "error",
+            message: "Invalid Token!!!"
+        });
+
+    } catch (error) {
+        res.json({
+            status: "error",
+            message: "Invalid Token!!!"
+        });
+    }
+})
