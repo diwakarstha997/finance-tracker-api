@@ -6,3 +6,8 @@ export const hashPassword = (plainPassword) => {
 
     return hashedPassword;
 }
+
+// Compare password to check the match
+export const comparePassword = (plainPassword, hashedPassword) => {
+    return bcrypt.compareSync(plainPassword, hashedPassword);
+}

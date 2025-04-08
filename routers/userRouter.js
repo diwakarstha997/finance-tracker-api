@@ -1,12 +1,14 @@
 import express from "express";
-import { createUser, updateUser } from "../model/userModel.js";
-import { hashPassword } from "../utility/bcryptHelper.js";
+import { createUser, findUserByEmail, updateUser } from "../model/userModel.js";
+import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
 import { v4 as uuidv4 } from "uuid";
-import { createSession, deleteSession } from "../model/sessionModel.js";
+import { createSession, deleteSession, getSession } from "../model/sessionModel.js";
 import { sendEmailVerification } from "../utility/nodeMailerHelper.js";
+import { generateJWT, verifyAccessJWT } from "../utility/jwtHelper.js";
 
 const userRouter = express.Router();
 
+// Sign Up new user | POST
 userRouter.post("/", async(req,res) =>{
     try {
         // Hash the plain password
@@ -56,6 +58,70 @@ userRouter.post("/", async(req,res) =>{
     }
 })
 
+// Login User | POST
+userRouter.post("/login", async(req, res) => {
+    try {
+        // Extract email and password from body
+        const { email, password } = req.body;
+
+        // Find user in database else response with error
+        const user = await findUserByEmail(email);
+
+        if(!user?._id){
+            res.json({
+                status: "error",
+                message: "Invalid Credentials!!"
+            })
+        }
+
+        // Check if user is verified else response with error
+        if(!user?.isEmailVerified){
+            res.json({
+                status: "error",
+                message: "Please verify your account before login!!"
+            })
+        }
+        // Compare password using bcrypt function 
+        const isPasswordMatched = comparePassword( password, user.password );
+
+        // if not matched resonse with error
+        if(!isPasswordMatched){
+            res.json({
+                status: "error",
+                message: "Invalid Credentials!!"
+            })
+        }
+
+        // Generate Jwt token
+        const jwt = generateJWT( user.email );
+
+        // Save access token on session table
+        const sessionStorage = await createSession({
+            userEmail: user.email,
+            token: jwt.accessJWT
+        })
+
+        // if saved successfully Response with success else response with error
+        sessionStorage?._id
+            ? res.json({
+                status: "success",
+                data: jwt,
+                message: "Logged In Successfully"
+            })
+            : res.json({
+                status: "error",
+                message: "Invalid Credentials!!"
+            })
+        
+    } catch (error) {
+        // Error Response
+        res.json({
+            status: "error",
+            message: `Invalid Credentials!!`
+        })
+    }
+})
+
 // Verify user email endpoint 
 userRouter.patch("/", async (req, res) => {
     try {
@@ -99,3 +165,61 @@ userRouter.patch("/", async (req, res) => {
 })
 
 export default userRouter;
+
+// GET User Endpoint | GET
+userRouter.get("/", async (req, res) => {
+    try {
+        // Verify jwt access token
+        const { authorization } = req.headers;
+
+        const decodedAccessJWT = verifyAccessJWT(authorization);
+
+        // if invalid error response
+        if(!decodedAccessJWT?.email){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            });
+          }
+
+        // if valid check session
+        const session = await getSession({
+            userEmail: decodedAccessJWT.email,
+            token: authorization
+        })
+
+        // if token does not exist error response
+        if(!session?._id){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            });
+          }
+
+        // if valid get user
+        const user = await findUserByEmail(decodedAccessJWT.email);
+
+        console.log(user)
+
+        // get user if user send user data in response
+        if(user?._id && user?.isEmailVerified){
+            user.password = undefined
+            res.json({
+                status: "sucess",
+                data: user
+            })
+        }
+
+        // if user doesnot exist
+        res.json({
+            status: "error",
+            message: "Invalid Token!!!"
+        });
+
+    } catch (error) {
+        res.json({
+            status: "error",
+            message: "Invalid Token!!!"
+        });
+    }
+})
