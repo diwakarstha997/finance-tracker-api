@@ -12,6 +12,14 @@ export const generateRefreshJWT = (email) => {
     return refreshJWT;
 }
 
+// Generate JWT Both Access and Refresh Token
+export const generateJWT = (email) => {
+    return({
+        accessJWT: generateAccessJWT(email),
+        refreshJWT: generateRefreshJWT(email)
+    })
+}
+
 // Verify Access JWT
 export const verifyAccessJWT = (accessJWT) => {
     return jwt.verify(accessJWT, process.env.JWT_ACCESS_SECRET);

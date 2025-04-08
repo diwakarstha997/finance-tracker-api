@@ -4,6 +4,7 @@ import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
 import { v4 as uuidv4 } from "uuid";
 import { createSession, deleteSession } from "../model/sessionModel.js";
 import { sendEmailVerification } from "../utility/nodeMailerHelper.js";
+import { generateJWT } from "../utility/jwtHelper.js";
 
 const userRouter = express.Router();
 
@@ -61,7 +62,7 @@ userRouter.post("/", async(req,res) =>{
 userRouter.post("/login", async(req, res) => {
     try {
         // Extract email and password from body
-        const { email, password } = res.body;
+        const { email, password } = req.body;
 
         // Find user in database else response with error
         const user = await findUserByEmail(email);
@@ -90,16 +91,33 @@ userRouter.post("/login", async(req, res) => {
                 message: "Invalid Credentials!!"
             })
         }
+
         // Generate Jwt token
+        const jwt = generateJWT( user.email );
+
         // Save access token on session table
-        // if saved successfully Response with success
-        // else response with error
+        const sessionStorage = await createSession({
+            userEmail: user.email,
+            token: jwt.accessJWT
+        })
+
+        // if saved successfully Response with success else response with error
+        sessionStorage?._id
+            ? res.json({
+                status: "success",
+                data: jwt,
+                message: "Logged In Successfully"
+            })
+            : res.json({
+                status: "error",
+                message: "Invalid Credentials!!"
+            })
         
     } catch (error) {
         // Error Response
         res.json({
             status: "error",
-            message: "Invalid Credentials!!"
+            message: `Invalid Credentials!!`
         })
     }
 })
