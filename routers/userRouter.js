@@ -1,12 +1,13 @@
 import express from "express";
-import { createUser, updateUser } from "../model/userModel.js";
-import { hashPassword } from "../utility/bcryptHelper.js";
+import { createUser, findUserByEmail, updateUser } from "../model/userModel.js";
+import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
 import { v4 as uuidv4 } from "uuid";
 import { createSession, deleteSession } from "../model/sessionModel.js";
 import { sendEmailVerification } from "../utility/nodeMailerHelper.js";
 
 const userRouter = express.Router();
 
+// Sign Up new user | POST
 userRouter.post("/", async(req,res) =>{
     try {
         // Hash the plain password
@@ -52,6 +53,53 @@ userRouter.post("/", async(req,res) =>{
         res.json({
             status: "error",
             message: "User Creation Failed!!!"
+        })
+    }
+})
+
+// Login User | POST
+userRouter.post("/login", async(req, res) => {
+    try {
+        // Extract email and password from body
+        const { email, password } = res.body;
+
+        // Find user in database else response with error
+        const user = await findUserByEmail(email);
+
+        if(!user?._id){
+            res.json({
+                status: "error",
+                message: "Invalid Credentials!!"
+            })
+        }
+
+        // Check if user is verified else response with error
+        if(!user?.isEmailVerified){
+            res.json({
+                status: "error",
+                message: "Please verify your account before login!!"
+            })
+        }
+        // Compare password using bcrypt function 
+        const isPasswordMatched = comparePassword( password, user.password );
+
+        // if not matched resonse with error
+        if(!isPasswordMatched){
+            res.json({
+                status: "error",
+                message: "Invalid Credentials!!"
+            })
+        }
+        // Generate Jwt token
+        // Save access token on session table
+        // if saved successfully Response with success
+        // else response with error
+        
+    } catch (error) {
+        // Error Response
+        res.json({
+            status: "error",
+            message: "Invalid Credentials!!"
         })
     }
 })
