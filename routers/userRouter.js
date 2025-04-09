@@ -4,7 +4,7 @@ import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
 import { v4 as uuidv4 } from "uuid";
 import { createSession, deleteSession, getSession } from "../model/sessionModel.js";
 import { sendEmailVerification } from "../utility/nodeMailerHelper.js";
-import { generateJWT, verifyAccessJWT } from "../utility/jwtHelper.js";
+import { generateAccessJWT, generateJWT, verifyAccessJWT, verifyRefreshJWT } from "../utility/jwtHelper.js";
 
 const userRouter = express.Router();
 
@@ -221,5 +221,51 @@ userRouter.get("/", async (req, res) => {
             status: "error",
             message: "Invalid Token!!!"
         });
+    }
+})
+
+// Generate new Access Jwt using Refresh Jwt
+userRouter.get("/accessjwt", async (req, res) => {
+    try {
+        // verify jwt refresh token
+        const { authorization } = req.headers;
+    
+        const decodedRefreshJWT = verifyRefreshJWT(authorization);
+
+        console.log(decodedRefreshJWT);
+    
+        if(!decodedRefreshJWT?.email){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            })
+        }
+    
+        // Get user from database
+        const user = await findUserByEmail(decodedRefreshJWT.email);
+    
+        if(user?.id && user?.isEmailVerified){
+    
+            // Generate new access JWT
+            const accessJWT = generateAccessJWT(user.email);
+    
+            // store generated access JWT in session table
+            const sessionStorage = await createSession({ userEmail: user.email, token: accessJWT });
+    
+            sessionStorage?._id
+                ? res.json({
+                    status: "success",
+                    data: accessJWT
+                })
+                : res.json({
+                    status: "error",
+                    data: "Invalid Token!!!"
+                })
+        }
+    } catch (error) {
+        res.json({
+            status: "error",
+            data: "Invalid Token!!!"
+        })
     }
 })
