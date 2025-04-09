@@ -269,3 +269,53 @@ userRouter.get("/accessjwt", async (req, res) => {
         })
     }
 })
+
+// Logout user | POST
+userRouter.post("/logout", async (req, res) => {
+    try {
+        // verify access jwt
+        const { authorization } = req.headers;
+    
+        const decodedAccessJWT =  verifyAccessJWT(authorization);
+    
+        if(!decodedAccessJWT?.email){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            })
+        }
+    
+        // check session storage if token exists
+        const sessionObj = {
+            userEmail: decodedAccessJWT.email, 
+            token: authorization
+        }
+        const session = await getSession(sessionObj);
+    
+        if(!session?._id){
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
+            })
+        }
+    
+        // if valid token get user from database
+        const user = await findUserByEmail(decodedAccessJWT.email);
+    
+        if(user?.email && user?.isEmailVerified){
+            // delete session
+            await deleteSession(sessionObj);
+
+            res.json({
+                status: "success",
+                message: "User Logged Out Successfully"
+            })
+        }
+        
+    } catch (error) {
+        res.json({
+            status: "error",
+            message: "Invalid Token!!!"+error
+        })
+    }
+})
