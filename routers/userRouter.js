@@ -199,8 +199,6 @@ userRouter.get("/", async (req, res) => {
         // if valid get user
         const user = await findUserByEmail(decodedAccessJWT.email);
 
-        console.log(user)
-
         // get user if user send user data in response
         if(user?._id && user?.isEmailVerified){
             user.password = undefined
@@ -210,11 +208,11 @@ userRouter.get("/", async (req, res) => {
             })
         }
 
-        // if user doesnot exist
-        res.json({
-            status: "error",
-            message: "Invalid Token!!!"
-        });
+        // // if user doesnot exist
+        // res.json({
+        //     status: "error",
+        //     message: "Invalid Token!!!"
+        // });
 
     } catch (error) {
         res.json({
