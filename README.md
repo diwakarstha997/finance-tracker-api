@@ -32,7 +32,7 @@ This is the backend authentication API for the Finance Tracker application. It p
 - **CORS** for cross-origin requests
 
 ## Live Demo Link
-> [https://finance-tracker-auth-system-client.vercel.app/](http://ft-client-bucket.s3-website-ap-southeast-2.amazonaws.com)
+> [http://ft-client-bucket.s3-website-ap-southeast-2.amazonaws.com](http://ft-client-bucket.s3-website-ap-southeast-2.amazonaws.com)
 
 ## Setup Instruction
 ### 1. Clone the Repository
