@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const transactionSchema = mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
     description: {
         type: String,
     },
@@ -13,6 +17,10 @@ const transactionSchema = mongoose.Schema({
         type: mongoose.Schema.Types.Decimal128,
         required: true
     }
-})
+},
+{
+    timestamps: true
+}
+)
 
 export default transactionSchema;
