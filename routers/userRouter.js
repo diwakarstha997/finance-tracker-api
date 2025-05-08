@@ -164,16 +164,15 @@ userRouter.patch("/", async (req, res) => {
     }
 })
 
-export default userRouter;
 
 // GET User Endpoint | GET
 userRouter.get("/", async (req, res) => {
     try {
         // Verify jwt access token
         const { authorization } = req.headers;
-
+        
         const decodedAccessJWT = verifyAccessJWT(authorization);
-
+        
         // if invalid error response
         if(!decodedAccessJWT?.email){
             res.json({
@@ -182,11 +181,11 @@ userRouter.get("/", async (req, res) => {
             });
           }
 
-        // if valid check session
-        const session = await getSession({
-            userEmail: decodedAccessJWT.email,
-            token: authorization
-        })
+          // if valid check session
+          const session = await getSession({
+              userEmail: decodedAccessJWT.email,
+              token: authorization
+            })
 
         // if token does not exist error response
         if(!session?._id){
@@ -194,11 +193,11 @@ userRouter.get("/", async (req, res) => {
                 status: "error",
                 message: "Invalid Token!!!"
             });
-          }
+        }
 
         // if valid get user
         const user = await findUserByEmail(decodedAccessJWT.email);
-
+        
         // get user if user send user data in response
         if(user?._id && user?.isEmailVerified){
             user.password = undefined
@@ -207,17 +206,17 @@ userRouter.get("/", async (req, res) => {
                 data: user
             })
         }
-
+        
         // // if user doesnot exist
         // res.json({
-        //     status: "error",
-        //     message: "Invalid Token!!!"
-        // });
-
-    } catch (error) {
-        res.json({
-            status: "error",
-            message: "Invalid Token!!!"
+            //     status: "error",
+            //     message: "Invalid Token!!!"
+            // });
+            
+        } catch (error) {
+            res.json({
+                status: "error",
+                message: "Invalid Token!!!"
         });
     }
 })
@@ -227,9 +226,9 @@ userRouter.get("/accessjwt", async (req, res) => {
     try {
         // verify jwt refresh token
         const { authorization } = req.headers;
-    
+        
         const decodedRefreshJWT = verifyRefreshJWT(authorization);
-
+        
         console.log(decodedRefreshJWT);
     
         if(!decodedRefreshJWT?.email){
@@ -238,20 +237,20 @@ userRouter.get("/accessjwt", async (req, res) => {
                 message: "Invalid Token!!!"
             })
         }
-    
+        
         // Get user from database
         const user = await findUserByEmail(decodedRefreshJWT.email);
     
         if(user?.id && user?.isEmailVerified){
-    
+            
             // Generate new access JWT
             const accessJWT = generateAccessJWT(user.email);
-    
+            
             // store generated access JWT in session table
             const sessionStorage = await createSession({ userEmail: user.email, token: accessJWT });
-    
+            
             sessionStorage?._id
-                ? res.json({
+            ? res.json({
                     status: "success",
                     data: accessJWT
                 })
@@ -259,12 +258,12 @@ userRouter.get("/accessjwt", async (req, res) => {
                     status: "error",
                     data: "Invalid Token!!!"
                 })
-        }
-    } catch (error) {
-        res.json({
-            status: "error",
-            data: "Invalid Token!!!"
-        })
+            }
+        } catch (error) {
+            res.json({
+                status: "error",
+                data: "Invalid Token!!!"
+            })
     }
 })
 
@@ -273,37 +272,37 @@ userRouter.post("/logout", async (req, res) => {
     try {
         // verify access jwt
         const { authorization } = req.headers;
-    
+        
         const decodedAccessJWT =  verifyAccessJWT(authorization);
-    
+        
         if(!decodedAccessJWT?.email){
             res.json({
                 status: "error",
                 message: "Invalid Token!!!"
             })
         }
-    
+        
         // check session storage if token exists
         const sessionObj = {
             userEmail: decodedAccessJWT.email, 
             token: authorization
         }
         const session = await getSession(sessionObj);
-    
+        
         if(!session?._id){
             res.json({
                 status: "error",
                 message: "Invalid Token!!!"
             })
         }
-    
+        
         // if valid token get user from database
         const user = await findUserByEmail(decodedAccessJWT.email);
-    
+        
         if(user?.email && user?.isEmailVerified){
             // delete session
             await deleteSession(sessionObj);
-
+            
             res.json({
                 status: "success",
                 message: "User Logged Out Successfully"
@@ -317,3 +316,6 @@ userRouter.post("/logout", async (req, res) => {
         })
     }
 })
+
+
+export default userRouter;
