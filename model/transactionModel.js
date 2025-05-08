@@ -14,3 +14,8 @@ export const createTransaction = (transactionObj) => {
 export const fetchAllUserTransactions = (userId) => {
     return transactionModel.find({ userId });
 }
+
+// fetch one transaction of user
+export const fetchUserOneTransaction = (filter) => {
+    return transactionModel.findOne({ ...filter });
+}
