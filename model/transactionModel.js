@@ -25,3 +25,8 @@ export const findAndUpdateTransaction = (transactionObj) => {
     const { _id } = transactionObj;
     return transactionModel.findByIdAndUpdate(_id, transactionObj, { new: true });
 }
+
+// delete one transaction
+export const deleteOneTransaction = (transactionId) => {
+    return transactionModel.findOneAndDelete({ _id: transactionId });
+}

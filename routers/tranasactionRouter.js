@@ -1,7 +1,7 @@
 import express from "express"
 import { verifyAccessJWT } from "../utility/jwtHelper.js";
 import { findUserByEmail } from "../model/userModel.js";
-import { createTransaction, fetchAllUserTransactions, fetchUserOneTransaction, findAndUpdateTransaction } from "../model/transactionModel.js";
+import { createTransaction, deleteOneTransaction, fetchAllUserTransactions, fetchUserOneTransaction, findAndUpdateTransaction } from "../model/transactionModel.js";
 
 const transactionRouter = express.Router();
 
@@ -222,5 +222,56 @@ transactionRouter.patch("/update-transaction", async(req, res) => {
 })
 
 // Delete Transaction | DELETE
+transactionRouter.delete("/:id", async(req, res) => {
+    try {
+        // authenticate user
+        const { authorization } = req.headers;
+        const decodedAccessJWT = verifyAccessJWT(authorization);
+
+        // if token not validated send error response
+        if(!decodedAccessJWT?.email){
+            res.json({
+                status: "error",
+                message: "Invalid token!!!"
+            })
+        }
+
+        // if token validated find user in db
+        const user = await findUserByEmail(decodedAccessJWT.email);
+
+        // if user not found send error response
+        if(!user?._id){
+            res.json({
+                status: "error",
+                message: "Invalid token!!!"
+            })
+        }
+
+        // if user is not verified sent eror response
+        if(!user?.isEmailVerified){
+            res.json({
+                status: "error",
+                message: "Invalid token!!!"
+            })
+        }
+
+        // if user exists find transaction and send update query to database
+        const transaction = await deleteOneTransaction(req.params.id)
+
+        // if success send success response
+        if(transaction?._id){
+            res.json({
+                status: "success",
+                message: "Transaction Deleted!!!",
+                data: transaction
+            })
+        }
+    } catch (error) {
+        res.json({
+            status: "error",
+            message: "Error: "+error,
+        })
+    }
+})
 
 export default transactionRouter;
