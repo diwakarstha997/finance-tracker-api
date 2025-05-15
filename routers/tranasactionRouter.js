@@ -1,7 +1,7 @@
 import express from "express"
 import { verifyAccessJWT } from "../utility/jwtHelper.js";
 import { findUserByEmail } from "../model/userModel.js";
-import { createTransaction, fetchAllUserTransactions, fetchUserOneTransaction } from "../model/transactionModel.js";
+import { createTransaction, fetchAllUserTransactions, fetchUserOneTransaction, findAndUpdateTransaction } from "../model/transactionModel.js";
 
 const transactionRouter = express.Router();
 
@@ -111,7 +111,7 @@ transactionRouter.get("/fetch-transactions", async(req, res) => {
 // Fetch One Transaction | GET
 transactionRouter.get("/:id", async(req, res) => {
     try {
-         // authenticate the user
+        // authenticate the user
         const { authorization } = req.headers;
         const decodedAccessJWT = await verifyAccessJWT(authorization);
 
@@ -144,8 +144,6 @@ transactionRouter.get("/:id", async(req, res) => {
 
         // if user exists and verified fetch transactions
         const transaction = await fetchUserOneTransaction({ userId: user._id, _id: req.params.id });
-        console.log(transaction);
-        
 
         // if transactions exist send succcess response
         if(transaction?._id){
@@ -169,7 +167,60 @@ transactionRouter.get("/:id", async(req, res) => {
     }
    
 })
+
 // Update Transaction | PATCH
+transactionRouter.patch("/update-transaction", async(req, res) => {
+    try {
+        // authenticate user
+        const { authorization } = req.headers;
+        const decodedAccessJWT = verifyAccessJWT(authorization);
+
+        // if token not validated send error response
+        if(!decodedAccessJWT?.email){
+            res.json({
+                status: "error",
+                message: "Invalid token!!!"
+            })
+        }
+
+        // if token validated find user in db
+        const user = await findUserByEmail(decodedAccessJWT.email);
+
+        // if user not found send error response
+        if(!user?._id){
+            res.json({
+                status: "error",
+                message: "Invalid token!!!"
+            })
+        }
+
+        // if user is not verified sent eror response
+        if(!user?.isEmailVerified){
+            res.json({
+                status: "error",
+                message: "Invalid token!!!"
+            })
+        }
+
+        // if user exists find transaction and send update query to database
+        const transaction = await findAndUpdateTransaction(req.body)
+
+        // if success send success response
+        if(transaction?._id){
+            res.json({
+                status: "success",
+                message: "Transaction Updated!!!",
+                data: transaction
+            })
+        }
+    } catch (error) {
+        res.json({
+            status: "error",
+            message: "Error: "+error,
+        })
+    }
+})
+
 // Delete Transaction | DELETE
 
 export default transactionRouter;

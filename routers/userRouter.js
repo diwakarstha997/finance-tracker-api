@@ -206,12 +206,6 @@ userRouter.get("/", async (req, res) => {
                 data: user
             })
         }
-        
-        // // if user doesnot exist
-        // res.json({
-            //     status: "error",
-            //     message: "Invalid Token!!!"
-            // });
             
         } catch (error) {
             res.json({

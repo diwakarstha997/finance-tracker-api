@@ -19,3 +19,9 @@ export const fetchAllUserTransactions = (userId) => {
 export const fetchUserOneTransaction = (filter) => {
     return transactionModel.findOne({ ...filter });
 }
+
+// update one transaction
+export const findAndUpdateTransaction = (transactionObj) => {
+    const { _id } = transactionObj;
+    return transactionModel.findByIdAndUpdate(_id, transactionObj, { new: true });
+}
